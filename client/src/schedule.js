@@ -31,7 +31,7 @@ export const buildSchedule = () => {
   const now = new Date();
 
   var hd = new Holidays("US");
-  let holidays = hd.getHolidays(now.getYear());
+  let holidays = hd.getHolidays(now.getFullYear());
 
   let holiday_lookup = {};
   for (let holiday of holidays) {
@@ -44,9 +44,9 @@ export const buildSchedule = () => {
     }
   }
 
-  const nowMonth = now.toLocaleString("default", { month: "long" });
-  const nowDate = now.getDate();
-  const nowDayOfWeek = now.getDay();
+  const nowYear = now.getFullYear();
+  const nowMonth = now.getMonth();
+  const nowDayOfWeek = weekday[now.getDay()];
   let todaysOutings = [];
 
   const parseMonthAndDate = (startOrEnd) => {
@@ -65,25 +65,68 @@ export const buildSchedule = () => {
     };
   };
 
-  for (let hour of Hours) {
-    let start = parseMonthAndDate(hour.Date_Start);
-    let end = parseMonthAndDate(hour.Date_End);
-    if (nowMonth >= start.month && nowMonth <= end.month) {
-      if (
-        (nowMonth !== start.month && nowMonth !== end.month) ||
-        (nowMonth === start.month && nowDate >= start.date) ||
-        (nowMonth === end.month && nowDate <= end.date)
-      ) {
-        todaysOutings.push({
-          venue: hour.Venue,
-          openTime: hour[`${nowDayOfWeek}_Start`],
-          closeTime: hour[`${nowDayOfWeek}_End`],
-        });
+  const timeToFloat = (openOrClose) => {
+    let hour = parseFloat(openOrClose.split(":")[0]);
+    if (openOrClose.indexOf(":30") !== -1) {
+      hour += 0.5;
+    }
+    if (openOrClose.indexOf("PM") !== -1) {
+      hour += 12;
+    }
+    return hour;
+  };
+
+  const inSeasonVenues = [];
+  const outOfSeasonVenues = [];
+
+  for (let outingSchedule of Hours) {
+    let start = parseMonthAndDate(outingSchedule.Date_Start);
+    let end = parseMonthAndDate(outingSchedule.Date_End);
+    if (start.month > end.month) {
+      if (nowMonth < start.month) {
+        start.dateTime = new Date(nowYear - 1, start.month, start.date);
+        end.dateTime = new Date(nowYear, end.month, end.date);
+      } else {
+        start.dateTime = new Date(nowYear, start.month, start.date);
+        end.dateTime = new Date(nowYear + 1, end.month, end.date);
+      }
+    } else {
+      start.dateTime = new Date(nowYear, start.month, start.date);
+      end.dateTime = new Date(nowYear, end.month, end.date);
+    }
+    if (start === "Closed" || end === "Closed") {
+      continue;
+    }
+    if (now >= start.dateTime && now <= end.dateTime) {
+      let outing = {
+        venue: outingSchedule.Venue,
+        openTime: outingSchedule[`${nowDayOfWeek}_Start`],
+        openFloat: timeToFloat(outingSchedule[`${nowDayOfWeek}_Start`]),
+        closeTime: outingSchedule[`${nowDayOfWeek}_End`],
+        closeFloat: timeToFloat(outingSchedule[`${nowDayOfWeek}_End`]),
+      };
+
+      todaysOutings.push(outing);
+      if (inSeasonVenues.indexOf(outingSchedule.Venue) === -1) {
+        inSeasonVenues.push(outingSchedule.Venue);
       }
     }
   }
+  for (let outingSchedule of Hours) {
+    if (
+      inSeasonVenues.indexOf(outingSchedule.Venue) === -1 &&
+      outOfSeasonVenues.indexOf(outingSchedule.Venue) === -1
+    ) {
+      outOfSeasonVenues.push(outingSchedule.Venue);
+    }
+  }
 
-  return todaysOutings;
+  return {
+    today: todaysOutings,
+    dayOfWeek: nowDayOfWeek,
+    inSeasonVenues,
+    outOfSeasonVenues,
+  };
 };
 
 export default buildSchedule;

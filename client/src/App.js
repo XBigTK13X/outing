@@ -4,13 +4,13 @@ import Hours from "./hours";
 
 import buildSchedule from "./schedule";
 
-buildSchedule();
+const schedule = buildSchedule();
 
 function App() {
   return (
     <div>
-      {Hours.map((hour, hourIndex) => {
-        return <div key={hourIndex}>{hour.Venue}</div>;
+      {schedule.map((outing, outingIndex) => {
+        return <div key={outingIndex}>{outing.venue}</div>;
       })}
     </div>
   );

@@ -27,8 +27,11 @@ const weekday = [
   "Saturday",
 ];
 
-export const buildSchedule = () => {
+export const buildSchedule = (dateOffset) => {
   const now = new Date();
+  if (dateOffset !== 0) {
+    now.setDate(now.getDate() + dateOffset);
+  }
 
   var hd = new Holidays("US");
   let holidays = hd.getHolidays(now.getFullYear());
@@ -70,7 +73,7 @@ export const buildSchedule = () => {
     if (openOrClose.indexOf(":30") !== -1) {
       hour += 0.5;
     }
-    if (openOrClose.indexOf("PM") !== -1) {
+    if (openOrClose.indexOf("PM") !== -1 && openOrClose.indexOf("12") === -1) {
       hour += 12;
     }
     return hour;
@@ -78,6 +81,7 @@ export const buildSchedule = () => {
 
   const inSeasonVenues = [];
   const outOfSeasonVenues = [];
+  const closedVenues = [];
 
   for (let outingSchedule of Hours) {
     let start = parseMonthAndDate(outingSchedule.Date_Start);
@@ -94,10 +98,14 @@ export const buildSchedule = () => {
       start.dateTime = new Date(nowYear, start.month, start.date);
       end.dateTime = new Date(nowYear, end.month, end.date);
     }
-    if (start === "Closed" || end === "Closed") {
-      continue;
-    }
     if (now >= start.dateTime && now <= end.dateTime) {
+      if (
+        outingSchedule[`${nowDayOfWeek}_Start`] === "Closed" ||
+        outingSchedule[`${nowDayOfWeek}_End`] === "Closed"
+      ) {
+        closedVenues.push(outingSchedule.Venue);
+        continue;
+      }
       let outing = {
         venue: outingSchedule.Venue,
         openTime: outingSchedule[`${nowDayOfWeek}_Start`],
@@ -115,7 +123,8 @@ export const buildSchedule = () => {
   for (let outingSchedule of Hours) {
     if (
       inSeasonVenues.indexOf(outingSchedule.Venue) === -1 &&
-      outOfSeasonVenues.indexOf(outingSchedule.Venue) === -1
+      outOfSeasonVenues.indexOf(outingSchedule.Venue) === -1 &&
+      closedVenues.indexOf(outingSchedule.Venue) === -1
     ) {
       outOfSeasonVenues.push(outingSchedule.Venue);
     }
@@ -124,8 +133,10 @@ export const buildSchedule = () => {
   return {
     today: todaysOutings,
     dayOfWeek: nowDayOfWeek,
+    monthDate: `${monthNames[nowMonth]} ${now.getDate()}`,
     inSeasonVenues,
     outOfSeasonVenues,
+    closedVenues,
   };
 };
 

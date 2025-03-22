@@ -1,3 +1,12 @@
 html,body {
   margin: 1em;
 }
+
+button {
+  font-size:2em;
+  margin:1em;
+}
+
+.centered {
+  text-align: center;
+}

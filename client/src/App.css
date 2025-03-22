@@ -1,12 +1,16 @@
 html,body {
-  margin: 1em;
+  margin: .5em;
 }
 
 button {
   font-size:2em;
-  margin:1em;
+  margin:.5em;
 }
 
 .centered {
   text-align: center;
+}
+
+.chart {
+  min-height:100vh;
 }

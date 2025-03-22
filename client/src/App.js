@@ -72,12 +72,14 @@ function App() {
         Rotate Chart
       </button>
       <h2>Currently In Season</h2>
-      <ScheduleChart
-        vertical={chartIsVertical}
-        today={schedule.today}
-        dayOfWeek={schedule.dayOfWeek}
-        monthDate={schedule.monthDate}
-      />
+      <div className="chart">
+        <ScheduleChart
+          vertical={chartIsVertical}
+          today={schedule.today}
+          dayOfWeek={schedule.dayOfWeek}
+          monthDate={schedule.monthDate}
+        />
+      </div>
       {dailyClosures}
       {outOfSeason}
     </div>
